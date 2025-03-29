@@ -6,6 +6,7 @@ import os
 import requests
 from websocket import create_connection
 import re
+import sys  # Für die Fortschrittsanzeige
 
 def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=False):
     try:
@@ -39,7 +40,19 @@ def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=Fal
         if not silent:
             print("Connection error:", e)
 
-def start_print(ws_url, filepath):
+def start_print(ws_url, filepath, countdown_minutes=1):
+    countdown_seconds = countdown_minutes * 60
+    print(f"Starting print in {countdown_minutes} minute(s)...")
+
+    for remaining in range(countdown_seconds, 0, -1):
+        minutes, seconds = divmod(remaining, 60)
+        progress = int((countdown_seconds - remaining) / countdown_seconds * 50)  # Fortschrittsbalken (50 Zeichen)
+        bar = f"[{'#' * progress}{'.' * (50 - progress)}]"
+        sys.stdout.write(f"\r{bar} {minutes:02}:{seconds:02} remaining")
+        sys.stdout.flush()
+        time.sleep(1)
+
+    print("\nCountdown finished. Sending print command...")
     payload = {
         "method": "set",
         "params": {
@@ -193,6 +206,7 @@ def main():
     parser = argparse.ArgumentParser(description="Creality K1 printer WebSocket/HTTP control tool")
     parser.add_argument("--ip", required=True, help="IP address of the printer")
     parser.add_argument("--start-file", metavar="FILENAME", help="Start print with filename")
+    parser.add_argument("--countdown", type=int, default=1, help="Countdown in minutes before starting the print (default: 1)")
     parser.add_argument("--pause", action="store_true", help="Pause the current print")
     parser.add_argument("--stop", action="store_true", help="Stop current print")
     parser.add_argument("--list", action="store_true", help="Request file list from printer")
@@ -209,7 +223,7 @@ def main():
     default_gcode_path = "/usr/data/printer_data/gcodes/"
 
     if args.start_file:
-        start_print(ws_url, default_gcode_path + args.start_file)
+        start_print(ws_url, default_gcode_path + args.start_file, countdown_minutes=args.countdown)
     elif args.pause:
         pause_print(ws_url)
     elif args.stop:
