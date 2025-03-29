@@ -3,12 +3,43 @@ import argparse
 import json
 import time
 import os
-import requests
-from websocket import create_connection
 import re
 import sys  # For progress display
-from PIL import Image
 from io import BytesIO
+
+# Check for required dependencies
+def check_dependencies():
+    missing_modules = []
+    try:
+        from websocket import create_connection
+    except ModuleNotFoundError:
+        missing_modules.append("websocket-client")
+
+    try:
+        import requests
+    except ModuleNotFoundError:
+        missing_modules.append("requests")
+
+    try:
+        from PIL import Image
+    except ModuleNotFoundError:
+        missing_modules.append("pillow")
+
+    if missing_modules:
+        print("The following required modules are not installed:")
+        for module in missing_modules:
+            print(f"   - {module}")
+        print("Please install them with:")
+        print(f"    pip install {' '.join(missing_modules)}")
+        sys.exit(1)
+
+# Run the dependency check
+check_dependencies()
+
+# Import the modules after the dependency check
+from websocket import create_connection
+import requests
+from PIL import Image
 
 def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=False):
     try:
@@ -249,7 +280,6 @@ def main():
     parser.add_argument("--countdown", type=int, default=1, help="Countdown in minutes before starting the print (default: 1)")
     parser.add_argument("--pause", action="store_true", help="Pause the current print")
     parser.add_argument("--stop", action="store_true", help="Stop current print")
-    parser.add_argument("--list", action="store_true", help="Request file list from printer")
     parser.add_argument("--list-files", metavar="KEYWORD", nargs="?", const="", help="List GCODE files with optional keyword filter")
     parser.add_argument("--sort", choices=["name", "size"], default="name", help="Sort list by 'name' or 'size'")
     parser.add_argument("--delete-files", metavar="KEYWORD", nargs="?", const="", help="Delete files matching keyword")
@@ -263,6 +293,7 @@ def main():
 
     default_gcode_path = "/usr/data/printer_data/gcodes/"
 
+    
     # Handle the command-line arguments and execute the corresponding function
     if args.start_file:
         start_print(ws_url, default_gcode_path + args.start_file, countdown_minutes=args.countdown)
@@ -270,8 +301,6 @@ def main():
         pause_print(ws_url)
     elif args.stop:
         stop_print(ws_url)
-    elif args.list:
-        list_files(ws_url, sort_by=args.sort)
     elif args.list_files is not None:
         list_files(ws_url, filter_keyword=args.list_files, sort_by=args.sort)
     elif args.delete_files is not None:
