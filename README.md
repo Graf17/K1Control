@@ -8,9 +8,11 @@ Likely compatible with the K1 Max, K2, and other related models as well.
 ## Usage
 ```bash
 
-usage: k1_control.py [-h] --ip IP [--start-file FILENAME] [--countdown COUNTDOWN] [--pause] [--stop]
-                     [--list-files [KEYWORD]] [--sort {name,size}] [--delete-files [KEYWORD]]
-                     [--delete-larger DELETE_LARGER] [--force] [--status] [--photo]
+usage: k1_control.py [-h] --ip IP
+                     [--start-file FILENAME] [--countdown COUNTDOWN] [--pause] [--stop]
+                     [--list-files [KEYWORD]] [--sort {name,size}]
+                     [--delete-files [KEYWORD]] [--delete-larger DELETE_LARGER] [--force]
+                     [--status] [--photo]
 ```
 ## Options
 
