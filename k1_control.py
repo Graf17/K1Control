@@ -83,8 +83,8 @@ def start_print(ws_url, filepath, countdown_minutes=1):
     for remaining in range(countdown_seconds, 0, -1):
         minutes, seconds = divmod(remaining, 60)
         progress = int((countdown_seconds - remaining) / countdown_seconds * 50)  # Progress bar (50 characters)
-        bar = f"[{'#' * progress}{'.' * (50 - progress)}]"
-        sys.stdout.write(f"\r{bar} {minutes:02}:{seconds:02} remaining")
+        bar = f"{'█' * progress}{'░' * (50 - progress)}"
+        sys.stdout.write(f"\r{bar} {minutes:02}:{seconds:02} remaining...")
         sys.stdout.flush()
         time.sleep(1)
 
@@ -103,6 +103,16 @@ def pause_print(ws_url):
         "method": "set",
         "params": {
             "pause": 1
+        }
+    }
+    send_ws_command(ws_url, payload)
+
+def resume_print(ws_url):
+    # Send a command to resume the current print
+    payload = {
+        "method": "set",
+        "params": {
+            "pause": 0
         }
     }
     send_ws_command(ws_url, payload)
@@ -279,6 +289,7 @@ def main():
     parser.add_argument("--start-file", metavar="FILENAME", help="Start print with filename")
     parser.add_argument("--countdown", type=int, default=1, help="Countdown in minutes before starting the print (default: 1)")
     parser.add_argument("--pause", action="store_true", help="Pause the current print")
+    parser.add_argument("--resume", action="store_true", help="Resume the current print after pausing")
     parser.add_argument("--stop", action="store_true", help="Stop current print")
     parser.add_argument("--list-files", metavar="KEYWORD", nargs="?", const="", help="List GCODE files with optional keyword filter")
     parser.add_argument("--sort", choices=["name", "size"], default="name", help="Sort list by 'name' or 'size'")
@@ -299,6 +310,8 @@ def main():
         start_print(ws_url, default_gcode_path + args.start_file, countdown_minutes=args.countdown)
     elif args.pause:
         pause_print(ws_url)
+    elif args.resume:
+        resume_print(ws_url)
     elif args.stop:
         stop_print(ws_url)
     elif args.list_files is not None:
