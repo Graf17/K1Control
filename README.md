@@ -8,7 +8,7 @@ Likely compatible with the K1 Max, K2, and other related models as well.
 ## Usage
 ```bash
 
-usage: k1_control.py [-h] --ip IP [--start-file FILENAME] [--countdown COUNTDOWN] [--pause] [--stop] [--list]
+usage: k1_control.py [-h] --ip IP [--start-file FILENAME] [--countdown COUNTDOWN] [--pause] [--stop]
                      [--list-files [KEYWORD]] [--sort {name,size}] [--delete-files [KEYWORD]]
                      [--delete-larger DELETE_LARGER] [--force] [--status] [--photo]
 ```
@@ -22,7 +22,6 @@ usage: k1_control.py [-h] --ip IP [--start-file FILENAME] [--countdown COUNTDOWN
 | `--countdown COUNTDOWN`        | Countdown in minutes before starting the print (default: 1) |
 | `--pause`                      | Pause the current print |
 | `--stop`                       | Stop current print |
-| `--list`                       | Request file list from printer |
 | `--list-files [KEYWORD]`       | List GCODE files with optional keyword filter |
 | `--sort {name,size}`           | Sort list by 'name' or 'size' |
 | `--delete-files [KEYWORD]`     | Delete files matching keyword |
