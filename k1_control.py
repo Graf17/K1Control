@@ -6,7 +6,9 @@ import os
 import requests
 from websocket import create_connection
 import re
-import sys  # Für die Fortschrittsanzeige
+import sys  # For progress display
+from PIL import Image
+from io import BytesIO
 
 def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=False):
     try:
@@ -14,6 +16,7 @@ def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=Fal
         if not silent:
             print("Connected to printer.")
 
+        # Clear any initial messages from the WebSocket buffer
         start_time = time.time()
         while time.time() - start_time < 2:
             try:
@@ -27,6 +30,7 @@ def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=Fal
             print("Sending command...")
         ws.send(json.dumps(payload))
 
+        # Wait for and print the response if expected
         if expect_response:
             try:
                 response = ws.recv()
@@ -44,9 +48,10 @@ def start_print(ws_url, filepath, countdown_minutes=1):
     countdown_seconds = countdown_minutes * 60
     print(f"Starting print in {countdown_minutes} minute(s)...")
 
+    # Display a countdown timer with a progress bar
     for remaining in range(countdown_seconds, 0, -1):
         minutes, seconds = divmod(remaining, 60)
-        progress = int((countdown_seconds - remaining) / countdown_seconds * 50)  # Fortschrittsbalken (50 Zeichen)
+        progress = int((countdown_seconds - remaining) / countdown_seconds * 50)  # Progress bar (50 characters)
         bar = f"[{'#' * progress}{'.' * (50 - progress)}]"
         sys.stdout.write(f"\r{bar} {minutes:02}:{seconds:02} remaining")
         sys.stdout.flush()
@@ -62,6 +67,7 @@ def start_print(ws_url, filepath, countdown_minutes=1):
     send_ws_command(ws_url, payload)
 
 def pause_print(ws_url):
+    # Send a command to pause the current print
     payload = {
         "method": "set",
         "params": {
@@ -71,6 +77,7 @@ def pause_print(ws_url):
     send_ws_command(ws_url, payload)
 
 def stop_print(ws_url):
+    # Send a command to stop the current print
     payload = {
         "method": "set",
         "params": {
@@ -80,6 +87,7 @@ def stop_print(ws_url):
     send_ws_command(ws_url, payload)
 
 def delete_file(ws_url, path, name):
+    # Send a command to delete a specific file on the printer
     payload = {
         "method": "set",
         "params": {
@@ -88,13 +96,12 @@ def delete_file(ws_url, path, name):
     }
     send_ws_command(ws_url, payload, expect_response=False, silent=True)
 
-
-
 def live_status(ws_url):
     try:
         ws = create_connection(ws_url, timeout=5)
         print("Connected. Listening for live status updates (Ctrl+C to stop)...")
 
+        # Continuously listen for status updates until interrupted
         while True:
             try:
                 msg = ws.recv()
@@ -111,6 +118,7 @@ def live_status(ws_url):
         print("Connection error:", e)
 
 def extract_fileinfo_field(message):
+    # Extract the file information field from a JSON message
     try:
         parsed = json.loads(message)
         if "retGcodeFileInfo" in parsed:
@@ -136,6 +144,7 @@ def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=Non
         file_info = None
         start_time = time.time()
 
+        # Wait for the file list response
         while time.time() - start_time < 10:
             try:
                 msg = ws.recv()
@@ -154,6 +163,7 @@ def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=Non
         total_size = 0
         results = []
 
+        # Parse and filter the file list
         for entry in entries:
             if not entry:
                 continue
@@ -172,11 +182,13 @@ def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=Non
                 results.append((path, name, size_mb))
                 total_size += size_mb
 
+        # Sort the results based on the specified criteria
         if sort_by == "size":
             results.sort(key=lambda x: x[2], reverse=True)
         else:
             results.sort(key=lambda x: x[1].lower())
 
+        # Display the results and optionally delete files
         if results:
             print("\nMatching files:")
             for _, name, size in results:
@@ -202,6 +214,33 @@ def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=Non
     except Exception as e:
         print("Connection error:", e)
 
+def fetch_photo(ip):
+    url = f"http://{ip}:8080/?action=snapshot"
+    try:
+        print("Fetching photo from printer...")
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()  # Raise an exception if the HTTP status code indicates an error
+
+        # Convert the image to grayscale
+        img = Image.open(BytesIO(response.content))
+        img = img.convert("L")  # Convert to grayscale
+        img = img.resize((80, 22))  # Resize for terminal display
+
+        # Map grayscale intensity to characters for terminal output
+        grayscale_chars = " ░▒▓█"  # From light (space) to dark (█)
+        output = ""
+        for y in range(img.height):
+            for x in range(img.width):
+                gray = img.getpixel((x, y))
+                output += grayscale_chars[gray * len(grayscale_chars) // 256]
+            output += "\n"
+
+        print(output)
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching photo: {e}")
+    except Exception as e:
+        print(f"Error processing photo: {e}")
+
 def main():
     parser = argparse.ArgumentParser(description="Creality K1 printer WebSocket/HTTP control tool")
     parser.add_argument("--ip", required=True, help="IP address of the printer")
@@ -216,12 +255,14 @@ def main():
     parser.add_argument("--delete-larger", type=float, help="Delete files larger than given size (in MB)")
     parser.add_argument("--force", action="store_true", help="Delete files without confirmation")
     parser.add_argument("--status", action="store_true", help="Show live status updates")
+    parser.add_argument("--photo", action="store_true", help="Fetch and display a photo from the printer's camera")
 
     args = parser.parse_args()
     ws_url = f"ws://{args.ip}:9999/websocket"
 
     default_gcode_path = "/usr/data/printer_data/gcodes/"
 
+    # Handle the command-line arguments and execute the corresponding function
     if args.start_file:
         start_print(ws_url, default_gcode_path + args.start_file, countdown_minutes=args.countdown)
     elif args.pause:
@@ -238,6 +279,8 @@ def main():
         list_files(ws_url, delete_over_size=args.delete_larger, sort_by=args.sort, force=args.force)
     elif args.status:
         live_status(ws_url)
+    elif args.photo:
+        fetch_photo(args.ip)
     else:
         parser.print_help()
 
