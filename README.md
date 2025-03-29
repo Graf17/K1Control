@@ -9,8 +9,9 @@ Likely compatible with the K1 Max, K2, and other related models as well.
 
 ```bash
 
-usage: k1_control.py [-h] --ip IP [--start-file FILENAME] [--pause] [--stop] [--list] [--list-files [KEYWORD]] [--sort {name,size}] [--delete-files [KEYWORD]]
-                     [--delete-larger DELETE_LARGER] [--force] [--status]
+usage: k1_control.py [-h] --ip IP [--start-file FILENAME] [--countdown COUNTDOWN] [--pause] [--stop] [--list]
+                     [--list-files [KEYWORD]] [--sort {name,size}] [--delete-files [KEYWORD]] [--delete-larger DELETE_LARGER]
+                     [--force] [--status]
 ```
 ## Options
 
@@ -19,6 +20,7 @@ usage: k1_control.py [-h] --ip IP [--start-file FILENAME] [--pause] [--stop] [--
 | `-h`, `--help`                 | Show this help message and exit |
 | `--ip IP`                      | IP address of the printer |
 | `--start-file FILENAME`        | Start print with filename |
+| `--countdown COUNTDOWN`        | Countdown in minutes before starting the print (default: 1) |
 | `--pause`                      | Pause the current print |
 | `--stop`                       | Stop current print |
 | `--list`                       | Request file list from printer |
