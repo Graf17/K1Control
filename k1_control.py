@@ -128,7 +128,7 @@ def extract_fileinfo_field(message):
         pass
     return None
 
-def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=None, force=False):
+def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=None, force=False, delete_mode=False):
     payload = {
         "method": "get",
         "params": {
@@ -195,7 +195,8 @@ def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=Non
                 print(f"{size:>6} MB {name:<60}")
             print(f"\nTotal size: {round(total_size, 2)} MB")
 
-            if delete_over_size is not None or filter_keyword is not None:
+            # Only prompt for deletion confirmation in delete mode
+            if delete_mode:
                 if not force:
                     confirm = input("\nDelete these files? [y/N]: ").strip().lower()
                     if confirm != "y":
@@ -274,7 +275,7 @@ def main():
     elif args.list_files is not None:
         list_files(ws_url, filter_keyword=args.list_files, sort_by=args.sort)
     elif args.delete_files is not None:
-        list_files(ws_url, filter_keyword=args.delete_files, sort_by=args.sort, force=args.force)
+        list_files(ws_url, filter_keyword=args.delete_files, sort_by=args.sort, force=args.force, delete_mode=True)
     elif args.delete_larger:
         list_files(ws_url, delete_over_size=args.delete_larger, sort_by=args.sort, force=args.force)
     elif args.status:
