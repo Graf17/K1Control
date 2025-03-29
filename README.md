@@ -1,6 +1,6 @@
 # Creality K1 Control Script
 
-**AI-generated Python script to control a Creality K1 running the original firmware.**  
+**With help of AI generated Python script to control a Creality K1 running the original firmware.**  
 Likely compatible with the K1 Max, K2, and other related models as well.
 
 ---
