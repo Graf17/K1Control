@@ -6,12 +6,11 @@ Likely compatible with the K1 Max, K2, and other related models as well.
 ---
 
 ## Usage
-
 ```bash
 
 usage: k1_control.py [-h] --ip IP [--start-file FILENAME] [--countdown COUNTDOWN] [--pause] [--stop] [--list]
-                     [--list-files [KEYWORD]] [--sort {name,size}] [--delete-files [KEYWORD]] [--delete-larger DELETE_LARGER]
-                     [--force] [--status]
+                     [--list-files [KEYWORD]] [--sort {name,size}] [--delete-files [KEYWORD]]
+                     [--delete-larger DELETE_LARGER] [--force] [--status] [--photo]
 ```
 ## Options
 
@@ -30,4 +29,5 @@ usage: k1_control.py [-h] --ip IP [--start-file FILENAME] [--countdown COUNTDOWN
 | `--delete-larger DELETE_LARGER`| Delete files larger than given size (in MB) |
 | `--force`                      | Delete files without confirmation |
 | `--status`                     | Show live status updates |
+| `--photo`                      | Fetch and display a photo from the printer's camera |
 
