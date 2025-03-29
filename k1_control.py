@@ -76,6 +76,63 @@ def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=Fal
             print("Connection error:", e)
 
 def start_print(ws_url, filepath, countdown_minutes=1):
+    # Extract the filename from the provided filepath
+    filename = os.path.basename(filepath)
+
+    # Check if the file exists on the printer
+    print(f"Checking if the file '{filename}' exists on the printer...")
+    file_exists = False
+    try:
+        # Use list_files to retrieve the list of files on the printer
+        payload = {
+            "method": "get",
+            "params": {
+                "reqGcodeFile": 1
+            }
+        }
+        ws = create_connection(ws_url, timeout=5)
+        ws.send(json.dumps(payload))
+        start_time = time.time()
+
+        # Wait for the file list response
+        file_info = None
+        while time.time() - start_time < 10:
+            try:
+                msg = ws.recv()
+                file_info = extract_fileinfo_field(msg)
+                if file_info:
+                    break
+            except Exception:
+                continue
+
+        ws.close()
+
+        if not file_info:
+            print("Error: Could not retrieve the file list from the printer.")
+            return
+
+        # Check if the filename exists in the file list
+        entries = file_info.split(';')
+        for entry in entries:
+            if not entry:
+                continue
+            parts = entry.split(':')
+            if len(parts) >= 6:
+                name = parts[1]
+                if name == filename:
+                    file_exists = True
+                    break
+
+    except Exception as e:
+        print(f"Error while checking file existence: {e}")
+        return
+
+    if not file_exists:
+        print(f"Error: The file '{filename}' does not exist on the printer.")
+        print("Please upload the file to the printer and try again.")
+        return
+
+    # Start the countdown if the file exists
     countdown_seconds = countdown_minutes * 60
     print(f"Starting print in {countdown_minutes} minute(s)...")
 
