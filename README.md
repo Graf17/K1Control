@@ -9,7 +9,7 @@ Likely compatible with the K1 Max, K2, and other related models as well.
 ```bash
 
 usage: k1_control.py [-h] --ip IP
-                     [--start-file FILENAME] [--countdown COUNTDOWN] [--pause] [--stop]
+                     [--start-file FILENAME] [--countdown COUNTDOWN] [--pause] [--resume] [--stop]
                      [--list-files [KEYWORD]] [--sort {name,size}]
                      [--delete-files [KEYWORD]] [--delete-larger DELETE_LARGER] [--force]
                      [--status] [--photo]
@@ -22,6 +22,7 @@ usage: k1_control.py [-h] --ip IP
 | `--ip IP`                      | IP address of the printer |
 | `--start-file FILENAME`        | Start print with filename |
 | `--countdown COUNTDOWN`        | Countdown in minutes before starting the print (default: 1) |
+| `--resume`                     | Resume the current print after pausing |
 | `--pause`                      | Pause the current print |
 | `--stop`                       | Stop current print |
 | `--list-files [KEYWORD]`       | List GCODE files with optional keyword filter |
