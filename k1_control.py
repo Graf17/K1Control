@@ -11,6 +11,7 @@ import curses
 # Check for required dependencies
 def check_dependencies():
     missing_modules = []
+
     try:
         from websocket import create_connection
     except ModuleNotFoundError:
@@ -29,12 +30,17 @@ def check_dependencies():
     try:
         import curses
     except ModuleNotFoundError:
-        missing_modules.append("windows-curses")  # On Windows, `curses` is provided by `windows-curses`
-    
+        missing_modules.append("windows-curses")  # For Windows compatibility
+
     try:
         import numpy
     except ModuleNotFoundError:
         missing_modules.append("numpy")
+
+    try:
+        from requests_toolbelt import MultipartEncoder
+    except ModuleNotFoundError:
+        missing_modules.append("requests-toolbelt")
 
     if missing_modules:
         print("The following required modules are not installed:")
@@ -85,6 +91,76 @@ def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=Fal
     except Exception as e:
         if not silent:
             print("Connection error:", e)
+
+def upload_file(ip, local_file_path):
+    import os
+    import requests
+    from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+    def is_valid_gcode(path):
+        try:
+            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                for _ in range(10):
+                    line = f.readline().strip().lower()
+                    if not line:
+                        continue
+                    if line.startswith(("g", "m", ";", "t", "start", "end", "init")):
+                        return True
+            return False
+        except Exception as e:
+            print(f"Warning: Could not read file: {e}")
+            return False
+
+    if not os.path.isfile(local_file_path):
+        print(f"Error: File not found: {local_file_path}")
+        return
+
+    filename = os.path.basename(local_file_path)
+
+    if not filename.lower().endswith(".gcode"):
+        print("Error: File does not have a .gcode extension.")
+        return
+
+    if not is_valid_gcode(local_file_path):
+        print("Error: File does not appear to be valid G-code.")
+        return
+
+    url = f"http://{ip}/upload/{filename}"
+    print(f"Uploading '{filename}' to {url}...")
+
+    with open(local_file_path, 'rb') as file_data:
+        encoder = MultipartEncoder(
+            fields={
+                "file": (filename, file_data, "text/x.gcode")
+            },
+            boundary="----WebKitFormBoundaryMSFQsbe7RlEsWyBy"
+        )
+
+        headers = {
+            "Content-Type": encoder.content_type,
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json, text/plain, */*",
+            "Origin": f"http://{ip}",
+            "Referer": f"http://{ip}/",
+        }
+
+        response = requests.post(url, data=encoder, headers=headers)
+
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            if data.get("code") == 200:
+                print("Upload successful.")
+            else:
+                print("Upload failed with response:", data)
+        except Exception as e:
+            print("Upload succeeded, but response was not valid JSON:", e)
+            print("Raw response:", response.text)
+    else:
+        print(f"Upload failed with status code {response.status_code}")
+        print("Response:", response.text)
+
+
 
 def start_print(ws_url, filepath, countdown_minutes=1):
     # Extract the filename from the provided filepath
@@ -557,6 +633,7 @@ def fetch_photo2(ip):
 def main():
     parser = argparse.ArgumentParser(description="Creality K1 printer WebSocket/HTTP control tool")
     parser.add_argument("--ip", required=True, help="IP address of the printer")
+    parser.add_argument("--upload-file", metavar="LOCALFILE", help="Upload a local GCODE file to the printer")
     parser.add_argument("--start-file", metavar="FILENAME", help="Start print with filename")
     parser.add_argument("--countdown", type=int, default=1, help="Countdown in minutes before starting the print (default: 1)")
     parser.add_argument("--pause", action="store_true", help="Pause the current print")
@@ -576,7 +653,9 @@ def main():
     default_gcode_path = "/usr/data/printer_data/gcodes/"
 
     # Handle the command-line arguments and execute the corresponding function
-    if args.start_file:
+    if args.upload_file:
+        upload_file(args.ip, args.upload_file)
+    elif args.start_file:
         start_print(ws_url, default_gcode_path + args.start_file, countdown_minutes=args.countdown)
     elif args.pause:
         pause_print(ws_url)

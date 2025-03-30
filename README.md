@@ -1,36 +1,93 @@
 # Creality K1 Control Script
 
-**With help of AI generated Python script to control a Creality K1 running the original firmware.**  
-Likely compatible with the K1 Max, K2, and other related models as well.
+A Python script – with some AI help – to control a Creality K1 running the original firmware.  
+Likely compatible with the K1 Max, K2, and other related models.
+
+---
+
+## Features
+
+- Start / pause / resume / stop prints  
+- Upload `.gcode` files directly to the printer  
+- List and delete files on the printer  
+- Monitor live print status in the terminal  
+- Display the printer's webcam image using ANSI color blocks  
 
 ---
 
 ## Usage
+
 ```bash
-
-usage: k1_control.py [-h] --ip IP
-                     [--start-file FILENAME] [--countdown COUNTDOWN]
-                     [--pause] [--resume] [--stop]
-                     [--list-files [KEYWORD]] [--sort {name,size}]
-                     [--delete-files [KEYWORD]] [--delete-larger DELETE_LARGER] [--force]
-                     [--status] [--photo]
+usage: k1_control.py --ip IP [options]
 ```
-## Options
 
-| Argmuent                         | Description |
-|--------------------------------|--------------|
-| `-h`, `--help`                 | Show this help message and exit |
-| `--ip IP`                      | IP address of the printer |
-| `--start-file FILENAME`        | Start print with filename |
-| `--countdown COUNTDOWN`        | Countdown in minutes before starting the print (default: 1) |
-| `--resume`                     | Resume the current print after pausing |
-| `--pause`                      | Pause the current print |
-| `--stop`                       | Stop current print |
-| `--list-files [KEYWORD]`       | List GCODE files with optional keyword filter |
-| `--sort {name,size}`           | Sort list by 'name' or 'size' |
-| `--delete-files [KEYWORD]`     | Delete files matching keyword |
-| `--delete-larger DELETE_LARGER`| Delete files larger than given size (in MB) |
-| `--force`                      | Delete files without confirmation |
-| `--status`                     | Show live status updates |
-| `--photo`                      | Fetch and display a photo from the printer's camera |
+---
 
+## Required
+
+| Argument   | Description               |
+|------------|---------------------------|
+| `--ip IP`  | IP address of the printer |
+
+---
+
+## Print Control
+
+| Argument              | Description                                          |
+|-----------------------|------------------------------------------------------|
+| `--start-file FILE`   | Start print with filename                            |
+| `--countdown MINUTES` | Countdown in minutes before starting the print       |
+| `--pause`             | Pause the current print                              |
+| `--resume`            | Resume the current print                             |
+| `--stop`              | Stop the current print                               |
+
+---
+
+## File Management
+
+| Argument                        | Description                                      |
+|----------------------------------|--------------------------------------------------|
+| `--upload-file FILE`            | Upload a local `.gcode` file to the printer     |
+| `--list-files [KEYWORD]`        | List `.gcode` files (optional keyword filter)   |
+| `--sort {name,size}`            | Sort file list by name or size                  |
+| `--delete-files [KEYWORD]`      | Delete files matching keyword                   |
+| `--delete-larger SIZE_MB`       | Delete files larger than given size (MB)        |
+| `--force`                       | Skip confirmation when deleting files           |
+
+---
+
+## Monitoring
+
+| Argument     | Description                                   |
+|--------------|-----------------------------------------------|
+| `--status`   | Show live printer status (in curses UI)       |
+| `--photo`    | Show current webcam image in terminal (ANSI)  |
+
+---
+
+## Requirements
+
+Install dependencies using:
+
+```bash
+pip install -r requirements.txt
+```
+
+Contents of `requirements.txt`:
+
+```
+requests
+websocket-client
+pillow
+numpy
+requests-toolbelt
+windows-curses; platform_system == "Windows"
+```
+
+---
+
+## Notes
+
+- Uploads require files with a `.gcode` extension and valid G-code content.
+- Uploads fail with error 500 if format or structure is incorrect.
+- This script communicates directly with the printer's WebSocket and HTTP interfaces.

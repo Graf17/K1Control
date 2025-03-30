@@ -1,3 +1,6 @@
 requests
 websocket-client
 pillow
+numpy
+requests-toolbelt
+windows-curses; platform_system == "Windows"
