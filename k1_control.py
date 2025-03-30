@@ -7,6 +7,7 @@ import re
 import sys  # For progress display
 from io import BytesIO
 import curses
+from datetime import datetime
 
 # Check for required dependencies
 def check_dependencies():
@@ -559,28 +560,45 @@ def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=Non
                 path = parts[0]
                 name = parts[1]
                 size_bytes = int(parts[2])
-                size_mb = round(size_bytes / 1048576, 2)
+                layer_height = float(parts[3])
+                timestamp = int(parts[4])
+                filament_mm = int(parts[5])
 
                 if filter_keyword and filter_keyword.lower() not in name.lower():
                     continue
-                if delete_over_size and size_mb <= delete_over_size:
+                if delete_over_size and (size_bytes / 1048576) <= delete_over_size:
                     continue
 
-                results.append((path, name, size_mb))
-                total_size += size_mb
+            results.append((path, name, size_bytes, layer_height, timestamp, filament_mm))
+
+            
 
         # Sort the results based on the specified criteria
         if sort_by == "size":
             results.sort(key=lambda x: x[2], reverse=True)
+        elif sort_by == "time":
+            results.sort(key=lambda x: x[4], reverse=True)
         else:
             results.sort(key=lambda x: x[1].lower())
 
+
+
+
+
         # Display the results and optionally delete files
         if results:
-            print("\nMatching files:")
-            for _, name, size in results:
-                print(f"{size:>6} MB {name:<60}")
-            print(f"\nTotal size: {round(total_size, 2)} MB")
+            print("\nMatching files:\n")
+            print(f"{'Time':<20}   {'Size':<8}   Name")
+            print(f"{'-'*20}   {'-'*8}   {'-'*40}")
+
+            for path, name, size_bytes, layer_height, timestamp, filament_mm in results:
+                size_mb = round(size_bytes / 1048576, 2)
+                dt = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+                print(f"{dt}   {size_mb:6.2f} MB   {name}")
+            print()
+            total_size_mb = sum(entry[2] for entry in results) / 1048576
+            print(f"Total size: {total_size_mb:.2f} MB")
+
 
             # Only prompt for deletion confirmation in delete mode
             if delete_mode:
@@ -655,7 +673,7 @@ def main():
     parser.add_argument("--resume", action="store_true", help="Resume the current print after pausing")
     parser.add_argument("--stop", action="store_true", help="Stop current print")
     parser.add_argument("--list-files", metavar="KEYWORD", nargs="?", const="", help="List GCODE files with optional keyword filter")
-    parser.add_argument("--sort", choices=["name", "size"], default="name", help="Sort list by 'name' or 'size'")
+    parser.add_argument("--sort", choices=["name", "size", "time"], default="name", help="Sort list by 'name', 'size' or 'time'")
     parser.add_argument("--delete-files", metavar="KEYWORD", nargs="?", const="", help="Delete files matching keyword")
     parser.add_argument("--delete-larger", type=float, help="Delete files larger than given size (in MB)")
     parser.add_argument("--force", action="store_true", help="Delete files without confirmation")
