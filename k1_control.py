@@ -94,8 +94,9 @@ def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=Fal
 
 def upload_file(ip, local_file_path):
     import os
+    import sys
     import requests
-    from requests_toolbelt.multipart.encoder import MultipartEncoder
+    from requests_toolbelt.multipart.encoder import MultipartEncoder, MultipartEncoderMonitor
 
     def is_valid_gcode(path):
         try:
@@ -126,6 +127,8 @@ def upload_file(ip, local_file_path):
         return
 
     url = f"http://{ip}/upload/{filename}"
+    file_size = os.path.getsize(local_file_path)
+
     print(f"Uploading '{filename}' to {url}...")
 
     with open(local_file_path, 'rb') as file_data:
@@ -136,15 +139,28 @@ def upload_file(ip, local_file_path):
             boundary="----WebKitFormBoundaryMSFQsbe7RlEsWyBy"
         )
 
+        # Progress bar callback
+        def progress_callback(monitor):
+            uploaded = monitor.bytes_read
+            progress = int(uploaded / monitor.len * 50)
+            bar = f"{'█' * progress}{'░' * (50 - progress)}"
+            percent = int((uploaded / monitor.len) * 100)
+            sys.stdout.write(f"\r{bar} {percent:3d}%")
+            sys.stdout.flush()
+
+        monitor = MultipartEncoderMonitor(encoder, progress_callback)
+
         headers = {
-            "Content-Type": encoder.content_type,
+            "Content-Type": monitor.content_type,
             "User-Agent": "Mozilla/5.0",
             "Accept": "application/json, text/plain, */*",
             "Origin": f"http://{ip}",
             "Referer": f"http://{ip}/",
         }
 
-        response = requests.post(url, data=encoder, headers=headers)
+        response = requests.post(url, data=monitor, headers=headers)
+
+    print()  # newline after progress bar
 
     if response.status_code == 200:
         try:
@@ -159,7 +175,6 @@ def upload_file(ip, local_file_path):
     else:
         print(f"Upload failed with status code {response.status_code}")
         print("Response:", response.text)
-
 
 
 def start_print(ws_url, filepath, countdown_minutes=1):
