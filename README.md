@@ -49,7 +49,7 @@ usage: k1_control.py --ip IP [options]
 |----------------------------------|--------------------------------------------------|
 | `--upload-file FILE`            | Upload a local `.gcode` file to the printer     |
 | `--list-files [KEYWORD]`        | List `.gcode` files (optional keyword filter)   |
-| `--sort {name,size}`            | Sort file list by name or size                  |
+| `--sort {name,size, time}`      | Sort file list by name, size or time            |
 | `--delete-files [KEYWORD]`      | Delete files matching keyword                   |
 | `--delete-larger SIZE_MB`       | Delete files larger than given size (MB)        |
 | `--force`                       | Skip confirmation when deleting files           |
