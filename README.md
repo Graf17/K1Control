@@ -75,7 +75,7 @@ To avoid specifying the `--ip` argument every time, you can create a `config.jso
 |--------------|-----------------------------------------------|
 | `--status`   | Show live printer status (in curses UI)       |
 | `--photo`    | Show current webcam image in terminal (ANSI)  |
-
+| `--video`    | Stream webcam feed in terminal (1 FPS)        |
 ---
 
 ## Requirements
