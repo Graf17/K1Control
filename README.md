@@ -12,13 +12,14 @@ Likely compatible with the K1 Max, K2, and other related models.
 - List and delete files on the printer  
 - Monitor live print status in the terminal  
 - Display the printer's webcam image using ANSI color blocks  
+- Stream the printer's webcam feed in the terminal  
 
 ---
 
 ## Usage
 
 ```bash
-usage: k1_control.py --ip IP [options]
+usage: [k1_control.py](http://_vscodecontentref_/1) --ip IP [options]
 ```
 
 ---

@@ -671,6 +671,60 @@ def fetch_photo2(ip):
     except Exception as e:
         print(f"Error processing photo: {e}")
 
+def fetch_video(ip, interval=1):
+    import requests
+    from PIL import Image
+    from io import BytesIO
+    import numpy as np
+    import shutil
+    import time
+    import os
+
+    url = f"http://{ip}:8080/?action=snapshot"
+    try:
+        while True:
+            # Clear the terminal screen
+            os.system("clear" if os.name == "posix" else "cls")
+
+            print("Fetching video frame from printer...")
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()  # Raise an exception if the HTTP status code indicates an error
+
+            # Load the image
+            img = Image.open(BytesIO(response.content))
+
+            # Get terminal dimensions
+            terminal_size = shutil.get_terminal_size((80, 24))  # Default to 80x24 if size cannot be determined
+            terminal_width = terminal_size.columns
+            terminal_height = terminal_size.lines
+
+            # Calculate the image dimensions
+            img_width = terminal_width
+            img_height = int((img_width * 9 / 16) / 2)  # Adjust height for ANSI pixel aspect ratio (half height)
+
+            # Resize the image to fit the terminal
+            img = img.resize((img_width, img_height))
+            img = img.convert("RGB")  # Ensure the image is in RGB format
+
+            # Convert the image to a NumPy array
+            img_array = np.array(img)
+
+            # ANSI escape codes for RGB colors
+            for row in img_array:
+                for pixel in row:
+                    r, g, b = pixel
+                    print(f"\033[48;2;{r};{g};{b}m ", end="")
+                print("\033[0m")  # Reset at the end of each row
+
+            # Wait for the next frame
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        print("\nVideo stream stopped.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching video frame: {e}")
+    except Exception as e:
+        print(f"Error processing video frame: {e}")
+
 def main():
     parser = argparse.ArgumentParser(description="Creality K1 printer WebSocket/HTTP control tool")
     parser.add_argument("--ip", help="IP address of the printer")
@@ -687,6 +741,7 @@ def main():
     parser.add_argument("--force", action="store_true", help="Delete files without confirmation")
     parser.add_argument("--status", action="store_true", help="Show live status updates")
     parser.add_argument("--photo", action="store_true", help="Fetch and display a photo from the printer's camera using ANSI colors")
+    parser.add_argument("--video", action="store_true", help="Fetch and display a video stream from the printer's camera (updates every 5 seconds)")
     args = parser.parse_args()
 
     ip = args.ip or get_default_ip()
@@ -719,6 +774,8 @@ def main():
         live_status(ws_url)
     elif args.photo:
         fetch_photo2(ip)  # Use the updated photo display function
+    elif args.video:
+        fetch_video(ip)  # Start the video stream
     else:
         parser.print_help()
 
