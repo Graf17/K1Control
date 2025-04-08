@@ -31,6 +31,18 @@ usage: k1_control.py --ip IP [options]
 
 ---
 
+## Default IP Configuration
+
+To avoid specifying the `--ip` argument every time, you can create a `config.json` file in the project directory with the following content:
+
+```json
+{
+  "default_ip": "192.168.1.100"
+}
+```
+
+---
+
 ## Print Control
 
 | Argument              | Description                                          |

@@ -59,6 +59,14 @@ from websocket import create_connection
 import requests
 from PIL import Image
 
+def get_default_ip():
+    config_path = "config.json"
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            config = json.load(f)
+            return config.get("default_ip")
+    return None
+
 def send_ws_command(ws_url, payload, expect_response=True, timeout=5, silent=False):
     try:
         ws = create_connection(ws_url, timeout=timeout)
@@ -665,7 +673,7 @@ def fetch_photo2(ip):
 
 def main():
     parser = argparse.ArgumentParser(description="Creality K1 printer WebSocket/HTTP control tool")
-    parser.add_argument("--ip", required=True, help="IP address of the printer")
+    parser.add_argument("--ip", help="IP address of the printer")
     parser.add_argument("--upload-file", metavar="LOCALFILE", help="Upload a local GCODE file to the printer")
     parser.add_argument("--start-file", metavar="FILENAME", help="Start print with filename")
     parser.add_argument("--countdown", type=int, default=1, help="Countdown in minutes before starting the print (default: 1)")
@@ -679,15 +687,20 @@ def main():
     parser.add_argument("--force", action="store_true", help="Delete files without confirmation")
     parser.add_argument("--status", action="store_true", help="Show live status updates")
     parser.add_argument("--photo", action="store_true", help="Fetch and display a photo from the printer's camera using ANSI colors")
-
     args = parser.parse_args()
-    ws_url = f"ws://{args.ip}:9999/websocket"
+
+    ip = args.ip or get_default_ip()
+    if not ip:
+        print("Error: No IP address provided and no default IP found in config.json.")
+        exit(1)
+
+    ws_url = f"ws://{ip}:9999/websocket"
 
     default_gcode_path = "/usr/data/printer_data/gcodes/"
 
     # Handle the command-line arguments and execute the corresponding function
     if args.upload_file:
-        upload_file(args.ip, args.upload_file)
+        upload_file(ip, args.upload_file)
     elif args.start_file:
         start_print(ws_url, default_gcode_path + args.start_file, countdown_minutes=args.countdown)
     elif args.pause:
@@ -705,7 +718,7 @@ def main():
     elif args.status:
         live_status(ws_url)
     elif args.photo:
-        fetch_photo2(args.ip)  # Use the updated photo display function
+        fetch_photo2(ip)  # Use the updated photo display function
     else:
         parser.print_help()
 
