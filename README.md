@@ -71,11 +71,12 @@ To avoid specifying the `--ip` argument every time, you can create a `config.jso
 
 ## Monitoring
 
-| Argument     | Description                                   |
-|--------------|-----------------------------------------------|
-| `--status`   | Show live printer status (in curses UI)       |
-| `--photo`    | Show current webcam image in terminal (ANSI)  |
-| `--video`    | Stream webcam feed in terminal (1 FPS)        |
+| Argument     | Description                                                                     |
+|--------------|---------------------------------------------------------------------------------|
+| `--status`   | Show live printer status (in curses UI)                                         |
+| `--photo`    | Show current webcam image in terminal (ANSI)                                    |
+| `--video`    | Stream webcam feed in terminal (default: 2 FPS, configurable with `--interval`) |
+| `--interval` | Interval in seconds between video frames (default: 0.5)                         |
 ---
 
 ## Requirements

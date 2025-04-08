@@ -671,7 +671,7 @@ def fetch_photo2(ip):
     except Exception as e:
         print(f"Error processing photo: {e}")
 
-def fetch_video(ip, interval=1):
+def fetch_video(ip, interval=0.5):
     import requests
     from PIL import Image
     from io import BytesIO
@@ -686,7 +686,7 @@ def fetch_video(ip, interval=1):
             # Clear the terminal screen
             os.system("clear" if os.name == "posix" else "cls")
 
-            print("Fetching video frame from printer...")
+            # Fetch the video frame
             response = requests.get(url, timeout=5)
             response.raise_for_status()  # Raise an exception if the HTTP status code indicates an error
 
@@ -709,12 +709,20 @@ def fetch_video(ip, interval=1):
             # Convert the image to a NumPy array
             img_array = np.array(img)
 
+            # Use a buffer to store the frame
+            buffer = []
+
             # ANSI escape codes for RGB colors
             for row in img_array:
+                line = ""
                 for pixel in row:
                     r, g, b = pixel
-                    print(f"\033[48;2;{r};{g};{b}m ", end="")
-                print("\033[0m")  # Reset at the end of each row
+                    line += f"\033[48;2;{r};{g};{b}m "  # Add colored block
+                line += "\033[0m"  # Reset at the end of each row
+                buffer.append(line)
+
+            # Join the buffer and print it all at once
+            print("\n".join(buffer))
 
             # Wait for the next frame
             time.sleep(interval)
@@ -742,6 +750,7 @@ def main():
     parser.add_argument("--status", action="store_true", help="Show live status updates")
     parser.add_argument("--photo", action="store_true", help="Fetch and display a photo from the printer's camera using ANSI colors")
     parser.add_argument("--video", action="store_true", help="Fetch and display a video stream from the printer's camera (updates every 5 seconds)")
+    parser.add_argument("--interval", type=float, default=0.5, help="Interval in seconds between video frames (default: 0.5)")
     args = parser.parse_args()
 
     ip = args.ip or get_default_ip()
@@ -775,7 +784,7 @@ def main():
     elif args.photo:
         fetch_photo2(ip)  # Use the updated photo display function
     elif args.video:
-        fetch_video(ip)  # Start the video stream
+        fetch_video(ip, interval=args.interval)  # Pass the interval argument
     else:
         parser.print_help()
 
