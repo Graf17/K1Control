@@ -617,7 +617,7 @@ def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=Non
                         ws.close()
                         return
                 print("\nDeleting files...")
-                for path, name, _ in results:
+                for path, name, size_bytes, *_ in results:  # Adjusted to handle extra values
                     delete_file(ws_url, path, name)
                     time.sleep(0.3)
                 print("Done.")
