@@ -678,53 +678,44 @@ def fetch_video(ip, interval=0.5):
     import numpy as np
     import shutil
     import time
-    import os
+    import sys
 
     url = f"http://{ip}:8080/?action=snapshot"
     try:
+        first_frame = True
+        img_height = 0  # Initialwert
         while True:
-            # Clear the terminal screen
-            os.system("clear" if os.name == "posix" else "cls")
+            # Hole aktuelle Terminalgröße für jedes Frame
+            terminal_size = shutil.get_terminal_size((80, 24))
+            img_width = terminal_size.columns
+            img_height = int((img_width * 9 / 16) / 2)
+
+            # Cursor nur bewegen, wenn nicht das erste Frame
+            if not first_frame:
+                sys.stdout.write(f"\033[{img_height}A")
+            else:
+                first_frame = False
 
             # Fetch the video frame
             response = requests.get(url, timeout=5)
-            response.raise_for_status()  # Raise an exception if the HTTP status code indicates an error
+            response.raise_for_status()
 
-            # Load the image
             img = Image.open(BytesIO(response.content))
-
-            # Get terminal dimensions
-            terminal_size = shutil.get_terminal_size((80, 24))  # Default to 80x24 if size cannot be determined
-            terminal_width = terminal_size.columns
-            terminal_height = terminal_size.lines
-
-            # Calculate the image dimensions
-            img_width = terminal_width
-            img_height = int((img_width * 9 / 16) / 2)  # Adjust height for ANSI pixel aspect ratio (half height)
-
-            # Resize the image to fit the terminal
             img = img.resize((img_width, img_height))
-            img = img.convert("RGB")  # Ensure the image is in RGB format
-
-            # Convert the image to a NumPy array
+            img = img.convert("RGB")
             img_array = np.array(img)
 
-            # Use a buffer to store the frame
             buffer = []
-
-            # ANSI escape codes for RGB colors
             for row in img_array:
                 line = ""
                 for pixel in row:
                     r, g, b = pixel
-                    line += f"\033[48;2;{r};{g};{b}m "  # Add colored block
-                line += "\033[0m"  # Reset at the end of each row
+                    line += f"\033[48;2;{r};{g};{b}m "
+                line += "\033[0m"
                 buffer.append(line)
 
-            # Join the buffer and print it all at once
-            print("\n".join(buffer))
+            print("\n".join(buffer), end="", flush=True)
 
-            # Wait for the next frame
             time.sleep(interval)
     except KeyboardInterrupt:
         print("\nVideo stream stopped.")
