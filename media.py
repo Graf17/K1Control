@@ -8,7 +8,7 @@ import os
 import sys
 import time
 
-def fetch_photo2(ip):
+def fetch_photo2(ip, highres=False):
     url = f"http://{ip}:8080/?action=snapshot"
     try:
         print("Fetching photo from printer...")
@@ -20,19 +20,38 @@ def fetch_photo2(ip):
         terminal_size = shutil.get_terminal_size((80, 24))
         terminal_width = terminal_size.columns
 
-        img_width = terminal_width
-        img_height = int((img_width * 9 / 16) / 2)
+        if highres:
+            img_width = terminal_width
+            img_height = int((img_width * 9 / 16))
+        else:
+            img_width = terminal_width
+            img_height = int((img_width * 9 / 16) / 2)
 
         img = img.resize((img_width, img_height))
         img = img.convert("RGB")
-
         img_array = np.array(img)
 
-        for row in img_array:
-            for pixel in row:
-                r, g, b = pixel
-                print(f"\033[48;2;{r};{g};{b}m ", end="")
-            print("\033[0m")
+        if highres:
+            buffer = []
+            for y in range(0, img_height - 1, 2):
+                line = ""
+                for x in range(img_width):
+                    upper = img_array[y, x]
+                    lower = img_array[y + 1, x]
+                    line += (
+                        f"\033[38;2;{upper[0]};{upper[1]};{upper[2]}m"
+                        f"\033[48;2;{lower[0]};{lower[1]};{lower[2]}m"
+                        "▄"
+                    )
+                line += "\033[0m"
+                buffer.append(line)
+            print("\n".join(buffer), end="", flush=True)
+        else:
+            for row in img_array:
+                for pixel in row:
+                    r, g, b = pixel
+                    print(f"\033[48;2;{r};{g};{b}m ", end="")
+                print("\033[0m")
     except requests.exceptions.RequestException as e:
         print(f"Error fetching photo: {e}")
     except Exception as e:
