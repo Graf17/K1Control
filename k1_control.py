@@ -354,17 +354,19 @@ def live_status(ws_url):
         safe_addstr(log_win, 0, 2, " Logs ")
         log_win.refresh()
 
-        raw_info_cache = {
-            "Total Layers": None,
-            "Current Layer": None,
-            "Nozzle Temp": None,
-            "Bed Temp": None,
-            "Progress": None,
-            "Position": None,
-            "Print Time": None,
-            "Time Left": None,
-        }
-        formatted_info = {key: "N/A" for key in raw_info_cache}
+        # Reihenfolge der Keys: Progress zuerst
+        info_keys = [
+            "Progress",
+            "Total Layers",
+            "Current Layer",
+            "Nozzle Temp",
+            "Bed Temp",
+            "Position",
+            "Print Time",
+            "Time Left",
+        ]
+        raw_info_cache = {key: None for key in info_keys}
+        formatted_info = {key: "N/A" for key in info_keys}
         previous_formatted_info = {}
         needs_redraw_fixed = True
 
@@ -429,21 +431,38 @@ def live_status(ws_url):
                         raw_info_cache["Position"] = data.get("curPosition", raw_info_cache["Position"])
                         raw_info_cache["Print Time"] = data.get("printJobTime", raw_info_cache["Print Time"])
                         raw_info_cache["Time Left"] = data.get("printLeftTime", raw_info_cache["Time Left"])
+                        # Progressbar für Progress
+                        if raw_info_cache["Progress"] is not None and isinstance(raw_info_cache["Progress"], (int, float)):
+                            progress_val = int(raw_info_cache["Progress"])
+                            bar_len = 30
+                            filled = int(progress_val / 100 * bar_len)
+                            bar = f"[{'█' * filled}{'░' * (bar_len - filled)}] {progress_val}%"
+                            progress_str = bar
+                        else:
+                            progress_str = "N/A"
                         formatted_info = {
+                            "Progress": progress_str,
                             "Total Layers": raw_info_cache["Total Layers"] if raw_info_cache["Total Layers"] is not None else "N/A",
                             "Current Layer": raw_info_cache["Current Layer"] if raw_info_cache["Current Layer"] is not None else "N/A",
-                            "Nozzle Temp": f"{float(raw_info_cache['Nozzle Temp']):.2f}°C" if raw_info_cache["Nozzle Temp"] is not None else "N/A",
-                            "Bed Temp": f"{float(raw_info_cache['Bed Temp']):.2f}°C" if raw_info_cache["Bed Temp"] is not None else "N/A",
-                            "Progress": f"{raw_info_cache['Progress']}%" if raw_info_cache["Progress"] is not None else "N/A",
+                            "Nozzle Temp": (
+                                f"{float(raw_info_cache['Nozzle Temp']):.2f}°C"
+                                if raw_info_cache["Nozzle Temp"] is not None and isinstance(raw_info_cache["Nozzle Temp"], (int, float))
+                                else "N/A"
+                            ),
+                            "Bed Temp": (
+                                f"{float(raw_info_cache['Bed Temp']):.2f}°C"
+                                if raw_info_cache["Bed Temp"] is not None and isinstance(raw_info_cache["Bed Temp"], (int, float))
+                                else "N/A"
+                            ),
                             "Position": raw_info_cache["Position"] if raw_info_cache["Position"] else "N/A",
                             "Print Time": (
                                 f"{int(raw_info_cache['Print Time'] // 3600):02}:{int((raw_info_cache['Print Time'] % 3600) // 60):02}:{int(raw_info_cache['Print Time'] % 60):02}"
-                                if raw_info_cache["Print Time"] is not None
+                                if raw_info_cache["Print Time"] is not None and isinstance(raw_info_cache["Print Time"], (int, float))
                                 else "N/A"
                             ),
                             "Time Left": (
                                 f"{int(raw_info_cache['Time Left'] // 3600):02}:{int((raw_info_cache['Time Left'] % 3600) // 60):02}:{int(raw_info_cache['Time Left'] % 60):02}"
-                                if raw_info_cache["Time Left"] is not None
+                                if raw_info_cache["Time Left"] is not None and isinstance(raw_info_cache["Time Left"], (int, float))
                                 else "N/A"
                             ),
                         }
@@ -468,7 +487,9 @@ def live_status(ws_url):
                 safe_addstr(fixed_info_win, status_line_y, 2, "Status: Connected", max_w_fixed - 3)
                 data_start_y = 3
                 value_start_col = 18
-                for i, (key, value) in enumerate(formatted_info.items()):
+                # Ausgabe in der gewünschten Reihenfolge
+                for i, key in enumerate(info_keys):
+                    value = formatted_info[key]
                     data_line_y = i + data_start_y
                     if data_line_y < (max_h_fixed - 1):
                         label_text = f"{key}:"
@@ -683,18 +704,23 @@ def fetch_video(ip, interval=0.5):
     url = f"http://{ip}:8080/?action=snapshot"
     try:
         first_frame = True
-        img_height = 0  # Initialwert
+        last_img_height = None
+        last_img_width = None
         while True:
-            # Hole aktuelle Terminalgröße für jedes Frame
             terminal_size = shutil.get_terminal_size((80, 24))
             img_width = terminal_size.columns
             img_height = int((img_width * 9 / 16) / 2)
 
-            # Cursor nur bewegen, wenn nicht das erste Frame
-            if not first_frame:
-                sys.stdout.write(f"\033[{img_height}A")
-            else:
+            # Clear screen on first frame or if terminal size changed
+            if first_frame or last_img_height != img_height or last_img_width != img_width:
+                os.system("clear" if os.name == "posix" else "cls")
                 first_frame = False
+            else:
+                # Cursor nach ganz oben setzen, damit das Bild immer an der gleichen Stelle beginnt
+                sys.stdout.write(f"\033[{img_height}F")
+
+            last_img_height = img_height
+            last_img_width = img_width
 
             # Fetch the video frame
             response = requests.get(url, timeout=5)
