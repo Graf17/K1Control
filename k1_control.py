@@ -178,6 +178,7 @@ def main():
     parser.add_argument("--status", action="store_true", help="Show live status updates")
     parser.add_argument("--photo", action="store_true", help="Fetch and display a photo from the printer's camera using ANSI colors")
     parser.add_argument("--video", action="store_true", help="Fetch and display a video stream from the printer's camera (updates at the given interval)")
+    parser.add_argument("--highres", action="store_true", help="Use Unicode half-blocks for higher vertical resolution in video mode")
     parser.add_argument("--interval", type=float, default=0.5, help="Interval in seconds between video frames (default: 0.5)")
     args = parser.parse_args()
 
@@ -218,7 +219,7 @@ def main():
     elif args.photo:
         fetch_photo2(ip)  # Use the updated photo display function
     elif args.video:
-        fetch_video(ip, interval=args.interval)  # Pass the interval argument
+        fetch_video(ip, interval=args.interval, highres=args.highres)
     else:
         parser.print_help()
 
