@@ -571,15 +571,19 @@ def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=Non
                 layer_height = float(parts[3])
                 timestamp = int(parts[4])
                 filament_mm = int(parts[5])
+                size_mb = size_bytes / 1048576 # Calculate MB here for filtering
 
                 if filter_keyword and filter_keyword.lower() not in name.lower():
                     continue
-                if delete_over_size and (size_bytes / 1048576) <= delete_over_size:
+                # Corrected logic: delete if size is GREATER than delete_over_size
+                if delete_over_size is not None and size_mb <= delete_over_size:
                     continue
 
-            results.append((path, name, size_bytes, layer_height, timestamp, filament_mm))
+                # If delete_mode is active due to --delete-larger, ensure we only add files matching the size criteria
+                if delete_mode and delete_over_size is not None and size_mb <= delete_over_size:
+                     continue # Skip if we are in delete mode for larger files but this one is not larger
 
-            
+                results.append((path, name, size_bytes, layer_height, timestamp, filament_mm))
 
         # Sort the results based on the specified criteria
         if sort_by == "size":
@@ -588,10 +592,6 @@ def list_files(ws_url, filter_keyword=None, sort_by="name", delete_over_size=Non
             results.sort(key=lambda x: x[4], reverse=True)
         else:
             results.sort(key=lambda x: x[1].lower())
-
-
-
-
 
         # Display the results and optionally delete files
         if results:
@@ -778,7 +778,8 @@ def main():
     elif args.delete_files is not None:
         list_files(ws_url, filter_keyword=args.delete_files, sort_by=args.sort, force=args.force, delete_mode=True)
     elif args.delete_larger:
-        list_files(ws_url, delete_over_size=args.delete_larger, sort_by=args.sort, force=args.force)
+        # Pass delete_mode=True and the size limit for deletion
+        list_files(ws_url, delete_over_size=args.delete_larger, sort_by=args.sort, force=args.force, delete_mode=True)
     elif args.status:
         live_status(ws_url)
     elif args.photo:
