@@ -12,7 +12,7 @@ Likely compatible with the K1 Max, K2, and other related models.
 - List and delete files on the printer  
 - Monitor live print status in the terminal  
 - Display the printer's webcam image using ANSI color blocks  
-- Stream the printer's webcam feed in the terminal  
+- Stream the printer's webcam feed in the terminal (with optional high-res mode)
 
 ---
 
@@ -71,12 +71,14 @@ To avoid specifying the `--ip` argument every time, you can create a `config.jso
 
 ## Monitoring
 
-| Argument     | Description                                                                     |
-|--------------|---------------------------------------------------------------------------------|
-| `--status`   | Show live printer status (in curses UI)                                         |
-| `--photo`    | Show current webcam image in terminal (ANSI)                                    |
-| `--video`    | Stream webcam feed in terminal (default: 2 FPS, configurable with `--interval`) |
-| `--interval` | Interval in seconds between video frames (default: 0.5)                         |
+| Argument      | Description                                                                                       |
+|---------------|---------------------------------------------------------------------------------------------------|
+| `--status`    | Show live printer status (in curses UI)                                                           |
+| `--photo`     | Show current webcam image in terminal (ANSI)                                                      |
+| `--video`     | Stream webcam feed in terminal (default: 2 FPS, configurable with `--interval`)                   |
+| `--interval`  | Interval in seconds between video frames (default: 0.5)                                           |
+| `--highres`   | Use Unicode half-blocks for higher vertical resolution in video/photo mode (for --photo/--video)  |
+
 ---
 
 ## Requirements
